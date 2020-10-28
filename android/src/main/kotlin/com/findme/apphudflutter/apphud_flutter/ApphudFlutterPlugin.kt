@@ -133,6 +133,11 @@ class ApphudFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Apph
                  result.success(json)
                  return;
              }
+             else
+             {
+                val map = mapOf("msg" to "subscriptions not found" );
+                result.success(JSONObject(map).toString())
+             }
 
          }
     }
