@@ -1,6 +1,7 @@
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/services.dart';
 
@@ -35,8 +36,17 @@ class ApphudFlutter {
       //Hack
       //Because ApphudSKD not clean up products array
       var existProduct = products.indexWhere((element) => element.productIdentifier == p['productIdentifier']);
+      var price = p['price'].toString();
+
+
+      if(Platform.isAndroid)
+      {
+         price = price.split(new RegExp('\\s+'))[1];
+         price = price.split(".")[0];
+      }
+
       if(existProduct == -1)
-        products.add(InAppProduct(p['productIdentifier'],p['price'].toString(),p['languageCode']));
+        products.add(InAppProduct(p['productIdentifier'],price,p['languageCode']));
     }
     return products;
   }

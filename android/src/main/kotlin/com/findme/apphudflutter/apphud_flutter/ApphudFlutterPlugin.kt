@@ -124,8 +124,9 @@ class ApphudFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Apph
             if(skus.isNotEmpty())
             {
                 var res = ArrayList<Map<String, String>>()
+
                 skus.forEach{
-                    res.add(mapOf("productIdentifier" to it.sku, "price" to it.originalPrice, "languageCode" to it.priceCurrencyCode))
+                    res.add(mapOf("productIdentifier" to it.sku, "price" to it.price.toString(), "languageCode" to it.priceCurrencyCode))
                 }
 
                 var json = JSONArray(res).toString();
