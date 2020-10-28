@@ -7,8 +7,8 @@ Required:
  - Minimum Android 4.1 and supports only Google Play store.
 
 ## Info
-- Android: ✖️ - soon
-- IOS: ✅ 
+- Android: ✅
+- IOS: ✅
 
 
 ## Doc
