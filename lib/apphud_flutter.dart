@@ -13,7 +13,7 @@ class ApphudFlutter {
   static Future<bool> init(String apiKey, {String userID}) async {
     final bool initState = await _channel.invokeMethod('initPurchases',{"apiKey": apiKey, "userID": userID});
     //hack for complete init
-    await Future.delayed(const Duration(milliseconds: 2000), () {});
+    await Future.delayed(const Duration(milliseconds: 3000), () {});
     return initState;
   }
 
@@ -87,7 +87,7 @@ class ApphudFlutter {
 
   static Future<bool> logout() async {
     final bool result = await _channel.invokeMethod('logout');
-    await Future.delayed(const Duration(milliseconds: 2000), () {});
+    await Future.delayed(const Duration(milliseconds: 3000), () {});
     return result;
   }
 }

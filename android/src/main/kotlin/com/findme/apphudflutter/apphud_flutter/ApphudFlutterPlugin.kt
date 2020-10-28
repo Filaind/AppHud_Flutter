@@ -4,7 +4,9 @@ import android.app.Activity
 import android.content.Context
 import androidx.annotation.NonNull
 import com.android.billingclient.api.*
-import com.apphud.sdk.*
+import com.apphud.sdk.Apphud
+import com.apphud.sdk.ApphudListener
+import com.apphud.sdk.isSuccess
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -14,6 +16,7 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import org.json.JSONArray
 import org.json.JSONObject
+import java.lang.Exception
 
 
 /** ApphudFlutterPlugin */
@@ -27,14 +30,42 @@ class ApphudFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Apph
     private lateinit var activity: Activity
     private lateinit var mBillingClient: BillingClient
     private lateinit var skus: List<SkuDetails>
+    private var result: Result? = null
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(flutterPluginBinding.binaryMessenger, "AppHudFlutter")
         channel.setMethodCallHandler(this)
         context = flutterPluginBinding.applicationContext
-        mBillingClient = BillingClient.newBuilder(context).setListener { billingResult, mutableList ->
 
-        }.enablePendingPurchases().build()
+        mBillingClient = BillingClient.newBuilder(context).enablePendingPurchases().setListener { billingResult, mutableList ->
+            if(billingResult.isSuccess()){
+                var pr = mutableList?.get(0)
+                if (pr != null) {
+                    val params = AcknowledgePurchaseParams.newBuilder()
+                            .setPurchaseToken(pr.purchaseToken)
+                            .build()
+                    mBillingClient.acknowledgePurchase(params) { r: BillingResult ->
+                        if(r.isSuccess())
+                        {
+                            Apphud.syncPurchases()
+                            val map = mapOf("type" to "subscription", "productIdentifier" to pr.sku, "actived" to true);
+                            result?.success(JSONObject(map).toString())
+                        }
+                        else
+                        {
+                            val map = mapOf("msg" to "purchase failed");
+                            result?.success(JSONObject(map).toString())
+                        }
+                    }
+                }
+            }
+            else
+            {
+                val map = mapOf("msg" to "purchase failed");
+                result?.success(JSONObject(map).toString())
+            }
+        }.build()
+
 
         mBillingClient.startConnection(object : BillingClientStateListener {
 
@@ -78,7 +109,13 @@ class ApphudFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Apph
 
         if(call.method == "logout")
         {
-            Apphud.logout()
+
+            try {
+                Apphud.logout()
+                println("Logout from apphud")
+            } catch (e: Exception){
+
+            }
             result.success(true)
         }
 
@@ -106,16 +143,21 @@ class ApphudFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Apph
 
         if(call.method == "purchase")
         {
+            this.result = result
+
             var productID = call.argument<String>("productID").toString()
 
-            Apphud.purchase(activity,skus.first { it.sku == productID }) {
-                var pr = it.get(0)
-                if (pr != null) {
-                    Apphud.syncPurchases()
-                    val map = mapOf("type" to "subscription" ,"productIdentifier" to pr.sku,"actived" to true );
-                    result.success(JSONObject(map).toString())
-                }
-            }
+            val billingFlowParams = BillingFlowParams.newBuilder()
+                    .setSkuDetails(skus.first { it.sku == productID }).build()
+            mBillingClient.launchBillingFlow(activity, billingFlowParams)
+//            Apphud.purchase(activity, skus.first { it.sku == productID }) {
+//                var pr = it.get(0)
+//                if (pr != null) {
+//                    Apphud.syncPurchases()
+//                    val map = mapOf("type" to "subscription", "productIdentifier" to pr.sku, "actived" to true);
+//                    result.success(JSONObject(map).toString())
+//                }
+//            }
 
         }
 
@@ -135,7 +177,7 @@ class ApphudFlutterPlugin: FlutterPlugin, MethodCallHandler, ActivityAware, Apph
              }
              else
              {
-                val map = mapOf("msg" to "subscriptions not found" );
+                val map = mapOf("msg" to "subscriptions not found");
                 result.success(JSONObject(map).toString())
              }
 
